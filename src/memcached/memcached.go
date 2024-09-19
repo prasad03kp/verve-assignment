@@ -210,3 +210,48 @@ func removeKeyFromList(key string) {
 		}
 	}
 }
+
+func CountUniqueIDsInCurrentMinute() int {
+	dataMutex.Lock()
+	defer dataMutex.Unlock()
+
+	client = getMemCacheClient()
+	keys := getAllKeys()
+	if len(keys) == 0 || (len(keys) == 1 && keys[0] == "") {
+		log.Printf("No keys found")
+		return 0
+	}
+
+	items, err := client.GetMulti(keys)
+	if err != nil {
+		log.Printf("Failed to retrieve items: %v", err)
+		return 0
+	}
+
+	now := time.Now()
+	currentMinuteStart := now.Truncate(time.Minute)
+
+	uniqueIDs := make(map[string]struct{})
+
+	for _, item := range items {
+		var id int
+		var timestampStr string
+		_, err := fmt.Sscanf(string(item.Value), "ID: %d, Timestamp: %s", &id, &timestampStr)
+		if err != nil {
+			log.Printf("Failed to parse item value: %v", err)
+			continue
+		}
+
+		timestamp, err := time.Parse(time.RFC3339, timestampStr)
+		if err != nil {
+			log.Printf("Failed to parse timestamp: %v", err)
+			continue
+		}
+
+		if timestamp.After(currentMinuteStart) && timestamp.Before(now) {
+			uniqueIDs[item.Key] = struct{}{}
+		}
+	}
+
+	return len(uniqueIDs)
+}

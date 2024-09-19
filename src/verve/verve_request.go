@@ -1,6 +1,7 @@
 package verve
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -32,7 +33,9 @@ func Accept(w http.ResponseWriter, r *http.Request) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				utilities.MakeGetCall(endpoint, id, Client)
+				uniqueCount := memcached.CountUniqueIDsInCurrentMinute()
+				fmt.Println(uniqueCount)
+				utilities.MakeGetCall(endpoint, uniqueCount, Client)
 			}()
 		}
 		Result = "ok"
