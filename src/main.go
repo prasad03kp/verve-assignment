@@ -24,6 +24,10 @@ func main() {
 		verve.Endpoint(w, r)
 	}).Methods("GET")
 
+	r.HandleFunc("/postendpoint", func(w http.ResponseWriter, r *http.Request) {
+		verve.PostEndpoint(w, r)
+	}).Methods("POST")
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3002"

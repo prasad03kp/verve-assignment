@@ -6,7 +6,8 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
-
+	"io"
+	"encoding/json"
 	memcached "github.com/prasad03kp/verve-assignment/memcached"
 	"github.com/prasad03kp/verve-assignment/utilities"
 )
@@ -15,6 +16,10 @@ var (
 	Result string = "ok"
 	Client *http.Client = &http.Client{}
 )
+
+type Body struct {
+	FreeText string
+}
 
 func Accept(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
@@ -34,8 +39,8 @@ func Accept(w http.ResponseWriter, r *http.Request) {
 			go func() {
 				defer wg.Done()
 				uniqueCount := memcached.CountUniqueIDsInCurrentMinute()
-				fmt.Println(uniqueCount)
-				utilities.MakeGetCall(endpoint, uniqueCount, Client)
+				var freeText string = "This is test string"
+				utilities.MakePostCall(endpoint, freeText, uniqueCount, Client)
 			}()
 		}
 		Result = "ok"
@@ -51,4 +56,26 @@ func Endpoint(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Printf("Count is %d", count)
 	}
+}
+
+func PostEndpoint(w http.ResponseWriter, r *http.Request) {
+	count, err := strconv.Atoi(r.URL.Query().Get("count"))
+	if err != nil {
+		log.Println("Error: Count is not integer")
+	} else {
+		log.Printf("Count is %d", count)
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Error reading endpoint body. %v", err)
+	}
+
+	var bodyContent Body 
+	err = json.Unmarshal(body, &bodyContent)
+	if err != nil {
+		log.Printf("Error parsing endpoint body. %v", err)
+	}
+
+	fmt.Printf("Free text: %s \n", bodyContent.FreeText)
 }
