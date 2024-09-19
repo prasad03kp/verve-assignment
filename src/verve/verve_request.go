@@ -1,10 +1,13 @@
 package verve
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
+
+	memcached "github.com/prasad03kp/verve-assignment/memcached"
+	"github.com/prasad03kp/verve-assignment/utilities"
 )
 
 var (
@@ -18,35 +21,31 @@ func Accept(w http.ResponseWriter, r *http.Request) {
 		Result = "failed"
 		w.WriteHeader(http.StatusUnprocessableEntity)
 	} else {
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			memcached.WriteToMemCache(id)
+		}()
 		endpoint := r.URL.Query().Get("endpoint")
 		if endpoint != "" {
-			req, err := http.NewRequest("GET", endpoint, nil)
-			if err != nil {
-				log.Printf("Error occured. Making new request to %s failed\n", endpoint)
-			}
-			req.URL.Query().Add("count", strconv.Itoa(id))
-
-			res, err := Client.Do(req)
-			if err != nil {
-				log.Printf("Error occured. API call to %s failed\n", endpoint)
-			} else {
-				log.Printf("Status code for %s : %d", endpoint, res.StatusCode)
-			}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				utilities.MakeGetCall(endpoint, id, Client)
+			}()
 		}
 		Result = "ok"
+		wg.Wait()
 	}
-
 	w.Write([]byte(Result))
 }
 
 func Endpoint(w http.ResponseWriter, r *http.Request) {
 	count, err := strconv.Atoi(r.URL.Query().Get("count"))
 	if err != nil {
-		Result = "Error: Count is not integer"
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		w.Write([]byte(Result))
+		log.Println("Error: Count is not integer")
 	} else {
-		Result = fmt.Sprintf("Count is %d", count)
-		w.Write([]byte(Result))
+		log.Printf("Count is %d", count)
 	}
 }
