@@ -27,4 +27,18 @@ Extension 1 of the assignment is present in `extension-1` branch of the same rep
 
 Extension 2 should be implicit with shared cache across running instances of application.
 
-Extension 3 - With ongoing release activities and hackathons in my current organization, I found very little time to work on this assignment. Hence I am unable to complete streaming service integration.
+Extension 3 - I have implemeted writing data to kafka at every minute. Before running the application, kafka needs to be set up by running below commands
+
+```
+brew install kafka
+
+zookeeper-server-start /opt/homebrew/opt/kafka/libexec/config/zookeeper.properties
+
+kafka-server-start /opt/homebrew/opt/kafka/libexec/config/server.properties
+
+kafka-topics --create --topic test --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+```
+
+To view the topic data, run the below command
+
+`kafka-console-consumer --bootstrap-server localhost:9092 --topic test --from-beginning`
