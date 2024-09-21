@@ -1,14 +1,16 @@
 package memcached
 
 import (
+	"fmt"
 	"log"
 	"os"
-	"time"
 	"strconv"
 	"strings"
 	"sync"
-	"fmt"
+	"time"
+
 	"github.com/bradfitz/gomemcache/memcache"
+	"github.com/prasad03kp/verve-assignment/kafka"
 )
 
 var (
@@ -151,10 +153,7 @@ func countUniqueAndLog() {
 
 	count := len(uniqueIDs)
 	logEntry := fmt.Sprintf("%s: Unique ID count is %d\n", now.Format(time.RFC3339), count)
-	_, err = logFile.WriteString(logEntry)
-	if err != nil {
-		log.Printf("Failed to write to log file: %v", err)
-	}
+	kafka.WriteToKafka(logEntry)
 }
 
 
